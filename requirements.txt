@@ -1,0 +1,4 @@
+bleak
+pyserial
+pyserial-asyncio
+httpx
