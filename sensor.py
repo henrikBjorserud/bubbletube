@@ -3,8 +3,8 @@ import httpx
 import serial
 from bleak import BleakClient, BleakScanner
 
-# SERIAL_PORT = "/dev/cu.usbserial-0163A9A7"  # macOS (Mac Mini)
-SERIAL_PORT = "/dev/ttyUSB0"                   # Linux
+SERIAL_PORT = "/dev/cu.usbserial-0163A9A7"    # macOS (Mac Mini)
+# SERIAL_PORT = "/dev/ttyUSB0"                 # Linux
 SERIAL_BAUD = 115200
 
 TFH_DEVICE_NAME = "TFH Bubble Column"
