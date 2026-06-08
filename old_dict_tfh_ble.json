@@ -1,0 +1,153 @@
+{
+	"device" : 	{
+		"uuid" : "5EECD469-EB62-CD6E-E4B6-A47CF6434FAC",
+		"uuid-win" : "EF9BE4CC140B",
+		"name" : "TFH Bubble Column 352574",
+		"max-ble-id" : 0,
+		"ip" : "192.168.1.198",
+		"port" : 8888,
+		"connected" : 0
+	}
+,
+	"generic-access" : 	{
+		"uuid" : "00001800-0000-1000-8000-00805F9B34FB",
+		"description" : "The generic access service contains generic information about the device. All available Characteristics are readonly",
+		"device-name" : 		{
+			"uuid" : "00002A00-0000-1000-8000-00805F9B34FB",
+			"description" : "*",
+			"properties" : [ "read", "write" ],
+			"value" : "*"
+		}
+
+	}
+,
+	"generic-attribute" : 	{
+		"uuid" : "00001801-0000-1000-8000-00805F9B34FB",
+		"description" : "*",
+		"service-changed" : 		{
+			"uuid" : "XXXX",
+			"description" : "*",
+			"properties" : [ "indicate" ],
+			"value" : 0
+		}
+
+	}
+,
+	"device-information" : 	{
+		"uuid" : "0000180A-0000-1000-8000-00805F9B34FB",
+		"description" : "The device information service exposes manufacturer and/or vendor inforamtion about the device",
+		"model-number" : 		{
+			"uuid" : "00002A24-0000-1000-8000-00805F9B34FB",
+			"description" : "*",
+			"properties" : [ "read" ],
+			"value" : "*"
+		}
+,
+		"serial-number" : 		{
+			"uuid" : "00002A25-0000-1000-8000-00805F9B34FB",
+			"description" : "*",
+			"properties" : [ "read" ],
+			"value" : "*"
+		}
+,
+		"firmware" : 		{
+			"uuid" : "00002A26-0000-1000-8000-00805F9B34FB",
+			"description" : "*",
+			"properties" : [ "read" ],
+			"value" : "*"
+		}
+,
+		"software" : 		{
+			"uuid" : "00002A28-0000-1000-8000-00805F9B34FB",
+			"description" : "*",
+			"properties" : [ "read" ],
+			"value" : "*"
+		}
+,
+		"manufacturer" : 		{
+			"uuid" : "00002A29-0000-1000-8000-00805F9B34FB",
+			"description" : "*",
+			"properties" : [ "read" ],
+			"value" : "*"
+		}
+
+	}
+,
+	"tfh" : 	{
+		"uuid" : "030013AC-4102-CD8D-EB11-1E8EF43639C5",
+		"description" : "*",
+		"mode-options" : 		{
+			"uuid" : "B074725B-E0DD-DFB0-E842-8E5AE2DD64F4",
+			"osc-addr" : "/misk-tfh/mode-options",
+			"description" : "*",
+			"properties" : [ "read" ],
+			"value" : "*"
+		}
+,
+		"mode" : 		{
+			"uuid" : "CC588E94-E480-A289-C04A-7532F921E133",
+			"osc-addr" : "/misk-tfh/mode",
+			"description" : "*",
+			"properties" : [ "read", "write" ],
+			"value" : 0
+		}
+,
+		"group" : 		{
+			"uuid" : "549C23A4-8BD6-F883-0843-D311373EB222",
+			"osc-addr" : "/misk-tfh/group",
+			"description" : "*",
+			"properties" : [ "read", "write" ],
+			"value" : [ 0, 0, 0 ]
+		}
+,
+		"speed" : 		{
+			"uuid" : "7EDFF190-963A-F1BB-6346-62E06D28DD38",
+			"osc-addr" : "/misk-tfh/speed",
+			"description" : "*",
+			"properties" : [ "read", "write" ],
+			"value" : 2
+		}
+,
+		"action" : 		{
+			"uuid" : "9DEEBE9D-B52B-4ACF-83F6-2D63A052D20E",
+			"osc-addr" : "/misk-tfh/action",
+			"description" : "*",
+			"properties" : [ "read", "write" ],
+			"value" : 0
+		}
+,
+		"relative-brightness" : 		{
+			"uuid" : "00AC0924-B5A3-CF89-7646-9EBBB985C62C",
+			"osc-addr" : "/misk-tfh/relbrightness",
+			"description" : "*",
+			"properties" : [ "read", "write" ],
+			"value" : 0
+		}
+,
+		"brightness" : 		{
+			"uuid" : "764B3935-953E-FFA1-734A-2E2F1C5E116A",
+			"osc-addr" : "/misk-tfh/brightness",
+			"description" : "*",
+			"properties" : [ "read", "write" ],
+			"value" : 0
+		}
+,
+		"colour" : 		{
+			"uuid" : "F177FA2A-2C95-7495-0340-ABCD84B721C2",
+			"osc-addr" : "/misk-tfh/color",
+			"description" : "*",
+			"properties" : [ "read", "write" ],
+			"value" : [ 0, 0, 0, 0 ]
+		}
+,
+		"standby" : 		{
+			"uuid" : "020012AC-4202-998C-EE11-1056E8DB2AFB",
+			"osc-addr" : "/misk-tfh/standby",
+			"description" : "*",
+			"properties" : [ "read", "write" ],
+			"value" : 0
+		}
+
+	}
+
+}
