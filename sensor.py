@@ -1,6 +1,7 @@
 import asyncio
 import httpx
 import serial
+from typing import Optional
 from bleak import BleakClient, BleakScanner
 
 SERIAL_PORT = "/dev/cu.usbserial-0163A9A7"    # macOS (Mac Mini)
@@ -33,7 +34,7 @@ WAKE_BRIGHTNESS = 200
 DIM_BRIGHTNESS  = 15
 
 # Philips Hue — fill in once bridge is ready
-HUE_BRIDGE_IP = "192.168.68.50"
+HUE_BRIDGE_IP = "169.254.15.73"
 HUE_API_KEY   = "U6ocVEFwwTo8umGXR4OfTPKZr3onH-1jlrYrp4Af"
 
 
@@ -151,7 +152,7 @@ async def hue_release():
 
 # --- main loop ---------------------------------------------------------------
 
-async def run(tube: BleakClient | None):
+async def run(tube: Optional[BleakClient]):
     if tube:
         opts = await tube.read_gatt_char(UUID_MODE_OPTIONS)
         print(f"Modes available: {opts.decode('utf-8', errors='replace')}")
