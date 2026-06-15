@@ -1,8 +1,12 @@
 import asyncio
 import httpx
+import os
+import signal
 import serial
 from typing import Optional
 from bleak import BleakClient, BleakScanner
+
+_active_tube: Optional[BleakClient] = None
 
 SERIAL_PORT = "/dev/cu.usbserial-0163A9A7"    # macOS (Mac Mini)
 # SERIAL_PORT = "/dev/ttyUSB0"                 # Linux
@@ -34,7 +38,7 @@ WAKE_BRIGHTNESS = 200
 DIM_BRIGHTNESS  = 15
 
 # Philips Hue — fill in once bridge is ready
-HUE_BRIDGE_IP = "169.254.15.73"
+HUE_BRIDGE_IP = "0017887feafe.local"
 HUE_API_KEY   = "U6ocVEFwwTo8umGXR4OfTPKZr3onH-1jlrYrp4Af"
 
 
@@ -247,7 +251,25 @@ async def run(tube: Optional[BleakClient]):
                 print(f"Idle dim — no trigger for {IDLE_DIM_SECS:.0f}s")
 
 
+async def _graceful_shutdown():
+    print("Shutting down...")
+    if _active_tube and _active_tube.is_connected:
+        try:
+            await tube_release(_active_tube)
+            await _write(_active_tube, UUID_STANDBY, bytes([1]))
+        except Exception:
+            pass
+    try:
+        await _hue_set_all({"on": False})
+    except Exception:
+        pass
+    os._exit(0)
+
+
 async def main():
+    loop = asyncio.get_event_loop()
+    loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(_graceful_shutdown()))
+
     while True:
         try:
             print("Scanning for TFH Bubble Column...")
@@ -261,6 +283,8 @@ async def main():
             else:
                 print(f"Found: {device.name}  ({device.address})")
                 async with BleakClient(device) as client:
+                    global _active_tube
+                    _active_tube = client
                     print("Connected")
                     await run(client)
 
