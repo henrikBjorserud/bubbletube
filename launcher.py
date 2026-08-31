@@ -67,6 +67,9 @@ def stop():
             _sc_proc.kill()
         logging.info("sclang stopped")
 
+    # kill any stale scsynth — it can survive sclang's exit and block the UDP port
+    subprocess.call(["pkill", "-f", "scsynth"], stderr=subprocess.DEVNULL)
+
     _running = False
 
 
