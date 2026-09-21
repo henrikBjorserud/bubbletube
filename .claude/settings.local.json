@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(system_profiler SPAudioDataType)",
+      "Read(//Applications/**)",
+      "Read(//Users/tactile/**)",
+      "Bash(brew search:*)",
+      "Bash(nvim --version)",
+      "Bash(nvim:*)",
+      "Read(//usr/local/share/**)",
+      "Read(//usr/local/share/nvim/**)",
+      "Read(//usr/local/**)",
+      "Read(//opt/**)"
+    ]
+  }
+}
