@@ -2,12 +2,14 @@
 // 8 piezos -> individual materials -> stereo out
 // Piezo map: 1=WoodA 2=BrushA 3=HarpA 4=HarpB 5=BrushB 6=WoodB 7=Metal 8=WoodC
 
+var x, setup, recovering = false, shuttingDown = false;
+
 Server.default.options.device = "Scarlett 18i8 USB";
 Server.default.options.numInputBusChannels = 20;
 Server.default.options.numOutputBusChannels = 8;
 Server.default.options.numWireBufs = 1024;
 
-s.waitForBoot {
+setup = {
     "BOOT OK - 8ch material inputs".postln;
 
     SynthDef(\materials8inputs, {
@@ -87,16 +89,33 @@ s.waitForBoot {
     s.sync;
 
     x = Synth(\materials8inputs, [
-        \gains,   [1, 2, 1, 3, 3, 4, 2.0, 2],
-        // ch4-8: lower threshold + higher gain to compensate for weaker piezos
+        \gains,   [1, 2, 5, 3, 3, 4, 2.0, 1],
         \thresh,  [0.003, 0.05, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003],
         \dryWet,  1.0,
-        \outGain, 0.04
+        \outGain, 0.5
     ]);
 
     "RUNNING: 1=WoodA 2=BrushA 3=HarpA 4=HarpB 5=BrushB 6=WoodB 7=Metal 8=WoodC".postln;
 };
 
-ShutDown.add({ s.quit; });
+// After ServerQuit fires (server is truly stopped), reboot and wait for full init
+ServerQuit.add({
+    if (recovering && shuttingDown.not) {
+        recovering = false;
+        // Wait 2s for scsynth to fully release UDP port, then boot fresh
+        AppClock.sched(2, {
+            s.waitForBoot { { setup.value }.fork };
+            nil
+        });
+    }
+});
 
-s.reboot;  // always fresh — ensures numWireBufs=1024 takes effect
+ShutDown.add({
+    shuttingDown = true;
+    s.quit;
+});
+
+// Initial boot — waitForBoot waits for shared memory init before firing
+s.waitForBoot {
+    setup.value;
+};
