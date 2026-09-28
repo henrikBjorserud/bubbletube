@@ -142,6 +142,11 @@ async def _hue_set_all(state: dict):
 async def hue_trigger(proximity: int):
     if not HUE_BRIDGE_IP or not HUE_API_KEY:
         return
+    if not _hue_light_ids:
+        try:
+            await _hue_fetch_light_ids()
+        except Exception:
+            return
     colour = proximity_to_colour(proximity)
     xy = _rgb_to_xy(colour[0], colour[1], colour[2])
     await _hue_set_all({"on": True, "bri": WAKE_BRIGHTNESS, "xy": xy, "transitiontime": 1})
@@ -166,7 +171,10 @@ async def run(tube: Optional[BleakClient]):
         print("Running without bubble tube")
 
     if HUE_BRIDGE_IP and HUE_API_KEY:
-        await _hue_fetch_light_ids()
+        try:
+            await _hue_fetch_light_ids()
+        except Exception as e:
+            print(f"Hue init failed ({e}) — will retry on first trigger")
 
     active = False
     last_proximity = None
