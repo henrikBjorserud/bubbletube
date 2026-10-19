@@ -1,5 +1,5 @@
 // diag_channels.scd — hit piezos to see which input channels have signal
-// Run: sclang /Users/tactile/sc/diag_channels.scd
+// Run: sclang /Users/tactile/bubble/sc/tests/diag_channels.scd
 
 Server.default.options.device = "Scarlett 18i8 USB";
 Server.default.options.numInputBusChannels = 20;

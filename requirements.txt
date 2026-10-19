@@ -1,3 +1,4 @@
 bleak
 pyserial
 httpx
+pynput

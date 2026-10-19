@@ -7,7 +7,7 @@ import logging
 import httpx
 from pynput import keyboard
 
-SC_SCRIPT  = "/Users/tactile/sc/07_material_inputs_8ch.scd"
+SC_SCRIPT  = "/Users/tactile/bubble/sc/07_material_inputs_8ch.scd"
 SENSOR_PY  = "/Users/tactile/bubble/sensor.py"
 SCLANG     = "/Applications/SuperCollider.app/Contents/MacOS/sclang"
 FOCUSRITE  = "/Applications/Focusrite Control 2.app"
