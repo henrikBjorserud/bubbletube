@@ -39,7 +39,7 @@ DIM_BRIGHTNESS  = 15
 
 # Philips Hue — fill in once bridge is ready
 HUE_BRIDGE_IP = "0017887feafe.local"
-HUE_API_KEY   = "U6ocVEFwwTo8umGXR4OfTPKZr3onH-1jlrYrp4Af"
+HUE_API_KEY   = "x9UmOUv-vtRKY1tRreeFBNaWYFHsUQEFxUJSo0S4"
 
 
 # --- value helpers -----------------------------------------------------------
@@ -126,7 +126,8 @@ async def _hue_fetch_light_ids():
     url = f"https://{HUE_BRIDGE_IP}/api/{HUE_API_KEY}/lights"
     async with httpx.AsyncClient(verify=False) as client:
         r = await client.get(url, timeout=5.0)
-        _hue_light_ids = list(r.json().keys())
+        # Colour lamps only — skip smart plugs (On/Off plug-in units)
+        _hue_light_ids = [k for k, v in r.json().items() if "xy" in v.get("state", {})]
     print(f"Hue lights: {_hue_light_ids}")
 
 
@@ -195,68 +196,71 @@ async def run(tube: Optional[BleakClient]):
         print(f"Sensor ready — trigger < {TRIGGER_MM}mm  release > {RELEASE_MM}mm")
         last_heartbeat = asyncio.get_event_loop().time()
 
-        while True:
-            try:
-                raw = await asyncio.to_thread(ser.readline)
-            except serial.SerialException as e:
-                print(f"Sensor disconnected ({e}) — reconnecting in 2s...")
-                ser.close()
-                await asyncio.sleep(2)
-                break  # back to outer serial-reconnect loop
-
-            if raw == b'':
-                # serial timeout — nobody in range
-                proximity, touched = TRIGGER_MM + 1, False
-            else:
-                line = raw.decode("utf-8", errors="replace").strip()
-                if not line or "," not in line:
-                    continue
+        try:
+            while True:
                 try:
-                    proximity, touched = line.split(",")
-                    proximity = int(proximity)
-                    touched = bool(int(touched))
-                except ValueError:
-                    continue
+                    raw = await asyncio.to_thread(ser.readline)
+                except serial.SerialException as e:
+                    print(f"Sensor disconnected ({e}) — reconnecting in 2s...")
+                    await asyncio.sleep(2)
+                    break  # back to outer serial-reconnect loop
 
-            now = asyncio.get_event_loop().time()
-            if now - last_heartbeat >= 5.0:
-                idle = f"{now - last_trigger_at:.0f}s" if last_trigger_at else "-"
-                print(f"  [{proximity}mm  active={active}  idle={idle}]")
-                last_heartbeat = now
+                if raw == b'':
+                    # serial timeout — nobody in range
+                    proximity, touched = TRIGGER_MM + 1, False
+                else:
+                    line = raw.decode("utf-8", errors="replace").strip()
+                    if not line or "," not in line:
+                        continue
+                    try:
+                        proximity, touched = line.split(",")
+                        proximity = int(proximity)
+                        touched = bool(int(touched))
+                    except ValueError:
+                        continue
 
-            if proximity < TRIGGER_MM or touched:
-                idle_dimmed = False
-                if not active:
-                    dim_stop.set()
+                now = asyncio.get_event_loop().time()
+                if now - last_heartbeat >= 5.0:
+                    idle = f"{now - last_trigger_at:.0f}s" if last_trigger_at else "-"
+                    print(f"  [{proximity}mm  active={active}  idle={idle}]")
+                    last_heartbeat = now
+
+                if proximity < TRIGGER_MM or touched:
+                    idle_dimmed = False
+                    if not active:
+                        dim_stop.set()
+                        if tube:
+                            await tube_trigger(tube, proximity)
+                        await hue_trigger(proximity)
+                        last_proximity = proximity
+                        last_trigger_at = now
+                        print(f"Triggered  proximity={proximity}mm  speed={proximity_to_speed(proximity)}")
+                        active = True
+                    elif last_proximity is None or abs(proximity - last_proximity) >= UPDATE_MM:
+                        if tube:
+                            await tube_trigger(tube, proximity)
+                        await hue_trigger(proximity)
+                        last_proximity = proximity
+
+                elif active and proximity > RELEASE_MM:
                     if tube:
-                        await tube_trigger(tube, proximity)
-                    await hue_trigger(proximity)
-                    last_proximity = proximity
-                    last_trigger_at = now
-                    print(f"Triggered  proximity={proximity}mm  speed={proximity_to_speed(proximity)}")
-                    active = True
-                elif last_proximity is None or abs(proximity - last_proximity) >= UPDATE_MM:
-                    if tube:
-                        await tube_trigger(tube, proximity)
-                    await hue_trigger(proximity)
-                    last_proximity = proximity
+                        await tube_release(tube)
+                        dim_stop = asyncio.Event()
+                        asyncio.create_task(tube_dim(tube, dim_stop))
+                    await hue_release()
+                    last_proximity = None
+                    print(f"Released  proximity={proximity}mm")
+                    active = False
 
-            elif active and proximity > RELEASE_MM:
-                if tube:
-                    await tube_release(tube)
-                    dim_stop = asyncio.Event()
-                    asyncio.create_task(tube_dim(tube, dim_stop))
-                await hue_release()
-                last_proximity = None
-                print(f"Released  proximity={proximity}mm")
-                active = False
+                if (not active and not idle_dimmed
+                        and last_trigger_at is not None
+                        and now - last_trigger_at >= IDLE_DIM_SECS):
+                    await _hue_set_all({"on": False})
+                    idle_dimmed = True
+                    print(f"Idle dim — no trigger for {IDLE_DIM_SECS:.0f}s")
 
-            if (not active and not idle_dimmed
-                    and last_trigger_at is not None
-                    and now - last_trigger_at >= IDLE_DIM_SECS):
-                await _hue_set_all({"on": False})
-                idle_dimmed = True
-                print(f"Idle dim — no trigger for {IDLE_DIM_SECS:.0f}s")
+        finally:
+            ser.close()
 
 
 async def _graceful_shutdown():
@@ -274,6 +278,13 @@ async def _graceful_shutdown():
     os._exit(0)
 
 
+async def _find_tube():
+    return await BleakScanner.find_device_by_filter(
+        lambda d, _: d.name and TFH_DEVICE_NAME in d.name,
+        timeout=15.0,
+    )
+
+
 async def main():
     loop = asyncio.get_event_loop()
     loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(_graceful_shutdown()))
@@ -281,20 +292,27 @@ async def main():
     while True:
         try:
             print("Scanning for TFH Bubble Column...")
-            device = await BleakScanner.find_device_by_filter(
-                lambda d, _: d.name and TFH_DEVICE_NAME in d.name,
-                timeout=15.0,
-            )
+            device = await _find_tube()
             if device is None:
-                print("Tube not found — starting in Hue-only mode")
-                await run(None)
-            else:
-                print(f"Found: {device.name}  ({device.address})")
-                async with BleakClient(device) as client:
-                    global _active_tube
-                    _active_tube = client
-                    print("Connected")
-                    await run(client)
+                # run without the tube, but keep looking so it's picked up when powered on
+                print("Tube not found — starting in Hue-only mode, still scanning")
+                hue_only = asyncio.create_task(run(None))
+                while device is None:
+                    if hue_only.done():
+                        hue_only.result()  # re-raise whatever stopped it
+                    device = await _find_tube()
+                hue_only.cancel()
+                try:
+                    await hue_only
+                except asyncio.CancelledError:
+                    pass
+
+            print(f"Found: {device.name}  ({device.address})")
+            async with BleakClient(device) as client:
+                global _active_tube
+                _active_tube = client
+                print("Connected")
+                await run(client)
 
         except Exception as e:
             print(f"Error ({e}) — restarting in 5s...")
